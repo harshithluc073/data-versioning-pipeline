@@ -1,0 +1,38 @@
+# Data Preprocessing Parameters
+preprocess:
+  test_size: 0.2
+  random_state: 42
+  validation_split: 0.1
+
+# Model Training Parameters
+train:
+  model_type: "random_forest"
+  n_estimators: 100
+  max_depth: 10
+  min_samples_split: 2
+  min_samples_leaf: 1
+  random_state: 42
+
+# Model Evaluation Parameters
+evaluate:
+  metrics:
+    - accuracy
+    - precision
+    - recall
+    - f1_score
+  generate_confusion_matrix: true
+
+# MLflow Configuration
+mlflow:
+  experiment_name: "data-versioning-pipeline"
+  run_name_prefix: "run"
+  tracking_uri: "./mlruns"
+
+# Data Validation Parameters
+validate:
+  required_columns:
+    - feature1
+    - feature2
+    - target
+  missing_threshold: 0.1
+  duplicate_check: true
