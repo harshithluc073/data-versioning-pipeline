@@ -26,6 +26,7 @@ venv/
 env/
 ENV/
 .venv
+virtualenv/
 
 # IDEs
 .vscode/
@@ -71,3 +72,6 @@ logs/
 # Temporary files
 *.tmp
 temp/
+
+# Validation reports (optional - can be tracked)
+# data/validation_report.json
