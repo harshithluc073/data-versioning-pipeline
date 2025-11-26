@@ -1,0 +1,30 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: python src/data/preprocess.py
+    deps:
+    - path: data/raw/dataset.csv
+      hash: md5
+      md5: 24de166ad5764405a58f6e2b27a552c9
+      size: 2328
+    - path: src/data/preprocess.py
+      hash: md5
+      md5: ab0aa83dbc8f59cee7fe2aeed233e2d5
+      size: 10189
+    params:
+      params.yaml:
+        preprocess.random_state: 42
+        preprocess.test_size: 0.2
+    outs:
+    - path: data/processed/scaler.pkl
+      hash: md5
+      md5: c326912731eed682fbf87de2631edc8f
+      size: 1103
+    - path: data/processed/test.csv
+      hash: md5
+      md5: 26b5c823c704a9c68cd2aca9aaab795c
+      size: 2317
+    - path: data/processed/train.csv
+      hash: md5
+      md5: c94aa80f48b88960688e504b60990068
+      size: 8619

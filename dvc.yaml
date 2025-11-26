@@ -3,7 +3,7 @@ stages:
     cmd: python src/data/validate.py
     deps:
       - src/data/validate.py
-      - data/raw
+      - data/raw/dataset.csv
     outs:
       - data/validation_report.json
 
@@ -11,13 +11,14 @@ stages:
     cmd: python src/data/preprocess.py
     deps:
       - src/data/preprocess.py
-      - data/raw
+      - data/raw/dataset.csv
     params:
       - preprocess.test_size
       - preprocess.random_state
     outs:
       - data/processed/train.csv
       - data/processed/test.csv
+      - data/processed/scaler.pkl
 
   train:
     cmd: python src/models/train.py
