@@ -49,3 +49,39 @@ stages:
       hash: md5
       md5: 4125bca437b0ab3d1887c78d33a30b16
       size: 106977
+  evaluate:
+    cmd: python src/models/evaluate.py
+    deps:
+    - path: data/processed/test.csv
+      hash: md5
+      md5: 26b5c823c704a9c68cd2aca9aaab795c
+      size: 2317
+    - path: models/model.pkl
+      hash: md5
+      md5: 4125bca437b0ab3d1887c78d33a30b16
+      size: 106977
+    - path: src/models/evaluate.py
+      hash: md5
+      md5: 57ea5723964b004b0560fb00e2fa7186
+      size: 11379
+    outs:
+    - path: metrics.json
+      hash: md5
+      md5: 0d818efc72380f174e5f8211e06322db
+      size: 584
+  validate_data:
+    cmd: python src/data/validate.py
+    deps:
+    - path: data/raw/dataset.csv
+      hash: md5
+      md5: 24de166ad5764405a58f6e2b27a552c9
+      size: 2328
+    - path: src/data/validate.py
+      hash: md5
+      md5: 0c45dde56bd06613f810303ade5913ee
+      size: 7332
+    outs:
+    - path: data/validation_report.json
+      hash: md5
+      md5: 47abd509f6c7723818a81f84245ee16e
+      size: 2982
