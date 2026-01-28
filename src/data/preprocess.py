@@ -57,11 +57,21 @@ class DataPreprocessor:
             
             # Fill numerical columns with median
             numerical_cols = self.data.select_dtypes(include=[np.number]).columns
-            for col in numerical_cols:
-                if self.data[col].isnull().any():
-                    median_value = self.data[col].median()
-                    self.data[col].fillna(median_value, inplace=True)
-                    print(f"  • Filled {col} with median: {median_value:.2f}")
+
+            # Identify columns with missing values
+            has_nans = self.data[numerical_cols].isnull().any()
+            cols_with_nans = has_nans[has_nans].index
+
+            if len(cols_with_nans) > 0:
+                # Calculate medians for columns with missing values
+                medians = self.data[cols_with_nans].median()
+
+                # Fill missing values efficiently
+                self.data.fillna(medians, inplace=True)
+
+                # Log filled columns to match original behavior
+                for col in cols_with_nans:
+                    print(f"  • Filled {col} with median: {medians[col]:.2f}")
             
             # Fill categorical columns with mode
             categorical_cols = self.data.select_dtypes(include=['object']).columns
