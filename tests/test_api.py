@@ -168,8 +168,13 @@ class TestPredictEndpoint:
     
     def test_predict_with_nan(self, test_client):
         """Test prediction with NaN value returns 422"""
+        # Use content string to avoid JSON serialization error in TestClient
+        # Note: Standard JSON doesn't support NaN, but we want to test that the API handles it
+        # or that the validator catches it if somehow it gets through
+
+        # If we send string "NaN", Pydantic might coerce it to float('nan')
         invalid_request = {
-            "feature1": float('nan'),
+            "feature1": "NaN",
             "feature2": 3.5,
             "feature3": 1.4,
             "feature4": 0.2,

@@ -190,6 +190,38 @@ def preprocess_features(data: dict) -> np.ndarray:
     return features_scaled
 
 
+def preprocess_batch_features(instances: List[PredictionRequest]) -> np.ndarray:
+    """
+    Preprocess a batch of features for prediction
+
+    Args:
+        instances: List of PredictionRequest objects
+
+    Returns:
+        Preprocessed feature array (batch)
+    """
+    # Convert to DataFrame
+    df = pd.DataFrame([i.dict() for i in instances])
+
+    # Create engineered features (vectorized)
+    df['feature_ratio'] = df['feature1'] / (df['feature2'] + 1e-10)
+    df['feature_sum'] = df['feature3'] + df['feature4']
+
+    # Select columns in correct order
+    features_extended = df[[
+        'feature1', 'feature2', 'feature3', 'feature4', 'feature5',
+        'feature_ratio', 'feature_sum'
+    ]].values
+
+    # Scale features if scaler available
+    if scaler is not None:
+        features_scaled = scaler.transform(features_extended)
+    else:
+        features_scaled = features_extended
+
+    return features_scaled
+
+
 @app.on_event("startup")
 async def startup_event():
     """Load model on startup"""
@@ -317,36 +349,40 @@ async def batch_predict(request: BatchPredictionRequest):
         )
     
     try:
+        # Preprocess batch
+        features = preprocess_batch_features(request.instances)
+
+        # Make predictions (vectorized)
+        predictions_raw = model.predict(features)
+
+        # Get confidences (vectorized)
+        confidences = np.ones(len(predictions_raw))
+        if hasattr(model, 'predict_proba'):
+            probabilities = model.predict_proba(features)
+            # Efficiently select probability for predicted class
+            predictions_indices = predictions_raw.astype(int)
+            confidences = probabilities[np.arange(len(predictions_raw)), predictions_indices]
+
+        # Construct response
         predictions = []
+        timestamp = datetime.now().isoformat()
         
-        for instance in request.instances:
-            # Preprocess features
-            features = preprocess_features(instance.dict())
-            
-            # Make prediction
-            prediction = model.predict(features)[0]
-            
-            # Get confidence
-            if hasattr(model, 'predict_proba'):
-                probabilities = model.predict_proba(features)[0]
-                confidence = float(probabilities[prediction])
-            else:
-                confidence = 1.0
-            
+        for i, pred_val in enumerate(predictions_raw):
+            pred_int = int(pred_val)
             predictions.append(PredictionResponse(
-                prediction=int(prediction),
-                prediction_label=CLASS_LABELS.get(int(prediction), f"Class_{prediction}"),
-                confidence=confidence,
+                prediction=pred_int,
+                prediction_label=CLASS_LABELS.get(pred_int, f"Class_{pred_int}"),
+                confidence=float(confidences[i]),
                 feature_importance=None,  # Skip for batch to save time
                 model_version=model_version,
-                timestamp=datetime.now().isoformat()
+                timestamp=timestamp
             ))
         
         return BatchPredictionResponse(
             predictions=predictions,
             total_predictions=len(predictions),
             model_version=model_version,
-            timestamp=datetime.now().isoformat()
+            timestamp=timestamp
         )
         
     except Exception as e:
