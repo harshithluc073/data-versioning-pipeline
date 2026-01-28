@@ -11,6 +11,7 @@ import pandas as pd
 from typing import List, Optional
 import os
 from datetime import datetime
+import warnings
 
 
 # Define request schema
@@ -237,7 +238,7 @@ async def health_check():
 
 
 @app.post("/predict", response_model=PredictionResponse)
-async def predict(request: PredictionRequest):
+def predict(request: PredictionRequest):
     """
     Make prediction for single instance
     
@@ -257,15 +258,22 @@ async def predict(request: PredictionRequest):
         # Preprocess features
         features = preprocess_features(request.dict())
         
-        # Make prediction
-        prediction = model.predict(features)[0]
-        
-        # Get prediction probabilities
-        if hasattr(model, 'predict_proba'):
-            probabilities = model.predict_proba(features)[0]
-            confidence = float(probabilities[prediction])
-        else:
-            confidence = 1.0
+        # Make prediction and get confidence
+        # Use catch_warnings to suppress "X does not have valid feature names" warning
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            if hasattr(model, 'predict_proba'):
+                probabilities = model.predict_proba(features)[0]
+                idx = np.argmax(probabilities)
+                # Use model.classes_ to get safe label if available, else use index
+                if hasattr(model, 'classes_'):
+                    prediction = int(model.classes_[idx])
+                else:
+                    prediction = int(idx)
+                confidence = float(probabilities[idx])
+            else:
+                prediction = int(model.predict(features)[0])
+                confidence = 1.0
         
         # Get feature importance if available
         feature_importance = None
@@ -300,7 +308,7 @@ async def predict(request: PredictionRequest):
 
 
 @app.post("/batch_predict", response_model=BatchPredictionResponse)
-async def batch_predict(request: BatchPredictionRequest):
+def batch_predict(request: BatchPredictionRequest):
     """
     Make predictions for multiple instances
     
@@ -319,28 +327,35 @@ async def batch_predict(request: BatchPredictionRequest):
     try:
         predictions = []
         
-        for instance in request.instances:
-            # Preprocess features
-            features = preprocess_features(instance.dict())
+        # Use catch_warnings outside the loop to suppress warnings for the whole batch
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
             
-            # Make prediction
-            prediction = model.predict(features)[0]
-            
-            # Get confidence
-            if hasattr(model, 'predict_proba'):
-                probabilities = model.predict_proba(features)[0]
-                confidence = float(probabilities[prediction])
-            else:
-                confidence = 1.0
-            
-            predictions.append(PredictionResponse(
-                prediction=int(prediction),
-                prediction_label=CLASS_LABELS.get(int(prediction), f"Class_{prediction}"),
-                confidence=confidence,
-                feature_importance=None,  # Skip for batch to save time
-                model_version=model_version,
-                timestamp=datetime.now().isoformat()
-            ))
+            for instance in request.instances:
+                # Preprocess features
+                features = preprocess_features(instance.dict())
+
+                # Make prediction and get confidence
+                if hasattr(model, 'predict_proba'):
+                    probabilities = model.predict_proba(features)[0]
+                    idx = np.argmax(probabilities)
+                    if hasattr(model, 'classes_'):
+                        prediction = int(model.classes_[idx])
+                    else:
+                        prediction = int(idx)
+                    confidence = float(probabilities[idx])
+                else:
+                    prediction = int(model.predict(features)[0])
+                    confidence = 1.0
+
+                predictions.append(PredictionResponse(
+                    prediction=int(prediction),
+                    prediction_label=CLASS_LABELS.get(int(prediction), f"Class_{prediction}"),
+                    confidence=confidence,
+                    feature_importance=None,  # Skip for batch to save time
+                    model_version=model_version,
+                    timestamp=datetime.now().isoformat()
+                ))
         
         return BatchPredictionResponse(
             predictions=predictions,
