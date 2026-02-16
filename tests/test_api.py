@@ -169,7 +169,7 @@ class TestPredictEndpoint:
     def test_predict_with_nan(self, test_client):
         """Test prediction with NaN value returns 422"""
         invalid_request = {
-            "feature1": float('nan'),
+            "feature1": "NaN",  # Use string "NaN" for JSON compatibility
             "feature2": 3.5,
             "feature3": 1.4,
             "feature4": 0.2,
