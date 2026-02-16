@@ -302,10 +302,33 @@ class ModelRegistryWorkflow:
             print("⚠ No versions found")
             return None
         
-        # Get run info for each version
+        # Get run info for each version using search_runs to avoid N+1 API calls
+        run_ids = [v.run_id for v in versions]
+        all_experiments = self.manager.client.search_experiments()
+        experiment_ids = [e.experiment_id for e in all_experiments]
+
+        # Chunk run_ids to avoid long filter strings
+        chunk_size = 100
+        run_map = {}
+        for i in range(0, len(run_ids), chunk_size):
+            chunk = run_ids[i:i + chunk_size]
+            # Join IDs with quotes for the IN clause
+            ids_str = ",".join([f"'{rid}'" for rid in chunk])
+            filter_string = f"attributes.run_id IN ({ids_str})"
+            chunk_runs = self.manager.client.search_runs(
+                experiment_ids=experiment_ids,
+                filter_string=filter_string
+            )
+            for run in chunk_runs:
+                run_map[run.info.run_id] = run
+
         version_data = []
         for v in versions:
-            run = self.manager.client.get_run(v.run_id)
+            run = run_map.get(v.run_id)
+            if not run:
+                # Fallback to individual get_run for missing runs
+                run = self.manager.client.get_run(v.run_id)
+
             version_info = {
                 'version': v.version,
                 'stage': v.current_stage,

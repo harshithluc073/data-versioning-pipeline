@@ -147,12 +147,35 @@ class MLflowManager:
             if runs_df.empty:
                 return pd.DataFrame()
         else:
-            # Get specific runs
+            # Get specific runs using search_runs to avoid N+1 API calls
+            all_experiments = self.client.search_experiments()
+            experiment_ids = [e.experiment_id for e in all_experiments]
+
+            # Chunk run_ids to avoid long filter strings
+            chunk_size = 100
+            run_map = {}
+            for i in range(0, len(run_ids), chunk_size):
+                chunk = run_ids[i:i + chunk_size]
+                # Join IDs with quotes for the IN clause
+                ids_str = ",".join([f"'{rid}'" for rid in chunk])
+                filter_string = f"attributes.run_id IN ({ids_str})"
+                chunk_runs = self.client.search_runs(
+                    experiment_ids=experiment_ids,
+                    filter_string=filter_string
+                )
+                for run in chunk_runs:
+                    run_map[run.info.run_id] = run
+
             run_data = []
             for run_id in run_ids:
-                run = self.client.get_run(run_id)
+                run = run_map.get(run_id)
+                if not run:
+                    # Fallback to individual get_run for missing runs or if search_runs failed
+                    # This also ensures we raise the same exception as before if the ID is invalid
+                    run = self.client.get_run(run_id)
+
                 run_info = {
-                    'run_id': run_id,
+                    'run_id': run.info.run_id,
                     'run_name': run.data.tags.get('mlflow.runName', 'N/A')
                 }
                 run_info.update(run.data.metrics)
