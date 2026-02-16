@@ -57,19 +57,27 @@ class DataPreprocessor:
             
             # Fill numerical columns with median
             numerical_cols = self.data.select_dtypes(include=[np.number]).columns
-            for col in numerical_cols:
-                if self.data[col].isnull().any():
-                    median_value = self.data[col].median()
-                    self.data[col].fillna(median_value, inplace=True)
-                    print(f"  • Filled {col} with median: {median_value:.2f}")
+            null_counts = self.data[numerical_cols].isnull().any()
+            cols_to_fill = null_counts[null_counts].index
+
+            if not cols_to_fill.empty:
+                medians = self.data[cols_to_fill].median()
+                self.data.fillna(medians, inplace=True)
+                for col in cols_to_fill:
+                    print(f"  • Filled {col} with median: {medians[col]:.2f}")
             
             # Fill categorical columns with mode
             categorical_cols = self.data.select_dtypes(include=['object']).columns
-            for col in categorical_cols:
-                if self.data[col].isnull().any():
-                    mode_value = self.data[col].mode()[0]
-                    self.data[col].fillna(mode_value, inplace=True)
-                    print(f"  • Filled {col} with mode: {mode_value}")
+            null_counts = self.data[categorical_cols].isnull().any()
+            cols_to_fill = null_counts[null_counts].index
+
+            if not cols_to_fill.empty:
+                # Use a dictionary comprehension to calculate modes for each column
+                # This is faster than df[cols_to_fill].mode() for large datasets
+                modes = {col: self.data[col].mode()[0] for col in cols_to_fill}
+                self.data.fillna(value=modes, inplace=True)
+                for col in cols_to_fill:
+                    print(f"  • Filled {col} with mode: {modes[col]}")
             
             missing_after = self.data.isnull().sum().sum()
             print(f"\n✓ Missing values handled: {missing_before} → {missing_after}")
