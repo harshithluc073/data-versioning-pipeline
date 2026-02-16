@@ -157,29 +157,36 @@ def preprocess_features(data: dict) -> np.ndarray:
     Returns:
         Preprocessed feature array
     """
-    # Extract features
-    features = np.array([[
-        data['feature1'],
-        data['feature2'],
-        data['feature3'],
-        data['feature4'],
-        data['feature5']
-    ]])
+    return preprocess_features_batch([data])
+
+
+def preprocess_features_batch(instances: List[dict]) -> np.ndarray:
+    """
+    Preprocess a batch of features for prediction
+
+    Args:
+        instances: List of dictionaries with feature values
+
+    Returns:
+        Preprocessed feature array (N, 7)
+    """
+    # Convert list of dicts to DataFrame for efficient processing
+    df = pd.DataFrame(instances)
+
+    # Extract basic features in correct order
+    feature_cols = ['feature1', 'feature2', 'feature3', 'feature4', 'feature5']
+    features = df[feature_cols].values
     
-    # Create engineered features (same as training)
-    feature_ratio = features[0][0] / (features[0][1] + 1e-10)
-    feature_sum = features[0][2] + features[0][3]
+    # Create engineered features (vectorized)
+    feature_ratio = features[:, 0] / (features[:, 1] + 1e-10)
+    feature_sum = features[:, 2] + features[:, 3]
     
     # Combine all features
-    features_extended = np.array([[
-        features[0][0],
-        features[0][1],
-        features[0][2],
-        features[0][3],
-        features[0][4],
+    features_extended = np.column_stack([
+        features,
         feature_ratio,
         feature_sum
-    ]])
+    ])
     
     # Scale features if scaler available
     if scaler is not None:
@@ -302,7 +309,7 @@ async def predict(request: PredictionRequest):
 @app.post("/batch_predict", response_model=BatchPredictionResponse)
 async def batch_predict(request: BatchPredictionRequest):
     """
-    Make predictions for multiple instances
+    Make predictions for multiple instances in an optimized batch
     
     Args:
         request: BatchPredictionRequest with list of instances
@@ -316,37 +323,52 @@ async def batch_predict(request: BatchPredictionRequest):
             detail="Model not loaded. Please check server logs."
         )
     
+    if not request.instances:
+        return BatchPredictionResponse(
+            predictions=[],
+            total_predictions=0,
+            model_version=model_version,
+            timestamp=datetime.now().isoformat()
+        )
+
     try:
+        # 1. Extract instances to list of dicts
+        instances_data = [instance.dict() for instance in request.instances]
+
+        # 2. Vectorized preprocessing
+        features_batch = preprocess_features_batch(instances_data)
+
+        # 3. Batch prediction
+        batch_predictions = model.predict(features_batch)
+
+        # 4. Batch confidence scores
+        if hasattr(model, 'predict_proba'):
+            batch_probabilities = model.predict_proba(features_batch)
+            # Efficiently extract probabilities for the predicted classes
+            batch_confidences = batch_probabilities[np.arange(len(batch_predictions)), batch_predictions]
+        else:
+            batch_confidences = np.ones(len(batch_predictions))
+
+        # 5. Construct response objects
         predictions = []
+        current_time = datetime.now().isoformat()
         
-        for instance in request.instances:
-            # Preprocess features
-            features = preprocess_features(instance.dict())
-            
-            # Make prediction
-            prediction = model.predict(features)[0]
-            
-            # Get confidence
-            if hasattr(model, 'predict_proba'):
-                probabilities = model.predict_proba(features)[0]
-                confidence = float(probabilities[prediction])
-            else:
-                confidence = 1.0
-            
+        for i in range(len(batch_predictions)):
+            pred_idx = int(batch_predictions[i])
             predictions.append(PredictionResponse(
-                prediction=int(prediction),
-                prediction_label=CLASS_LABELS.get(int(prediction), f"Class_{prediction}"),
-                confidence=confidence,
-                feature_importance=None,  # Skip for batch to save time
+                prediction=pred_idx,
+                prediction_label=CLASS_LABELS.get(pred_idx, f"Class_{pred_idx}"),
+                confidence=float(batch_confidences[i]),
+                feature_importance=None,
                 model_version=model_version,
-                timestamp=datetime.now().isoformat()
+                timestamp=current_time
             ))
         
         return BatchPredictionResponse(
             predictions=predictions,
             total_predictions=len(predictions),
             model_version=model_version,
-            timestamp=datetime.now().isoformat()
+            timestamp=current_time
         )
         
     except Exception as e:
