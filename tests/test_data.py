@@ -158,14 +158,14 @@ class TestDataPreprocessor:
     
     @pytest.fixture
     def sample_data(self):
-        """Create sample dataset"""
+        """Create sample dataset with enough samples for stratified split"""
         data = pd.DataFrame({
-            'feature1': [5.1, 4.9, 4.7, 6.2, 5.9, 6.1],
-            'feature2': [3.5, 3.0, 3.2, 2.9, 3.0, 2.8],
-            'feature3': [1.4, 1.4, 1.3, 4.3, 5.1, 5.6],
-            'feature4': [0.2, 0.2, 0.2, 1.3, 1.8, 1.4],
-            'feature5': [2.3, 2.1, 1.9, 3.7, 4.2, 4.5],
-            'target': [0, 0, 0, 1, 2, 2]
+            'feature1': [5.1, 4.9, 4.7, 6.2, 5.9, 6.1, 5.0, 6.0, 5.5, 6.5],
+            'feature2': [3.5, 3.0, 3.2, 2.9, 3.0, 2.8, 3.4, 2.7, 3.1, 2.6],
+            'feature3': [1.4, 1.4, 1.3, 4.3, 5.1, 5.6, 1.5, 4.5, 5.0, 6.0],
+            'feature4': [0.2, 0.2, 0.2, 1.3, 1.8, 1.4, 0.3, 1.5, 1.7, 1.9],
+            'feature5': [2.3, 2.1, 1.9, 3.7, 4.2, 4.5, 2.2, 3.8, 4.0, 4.8],
+            'target': [0, 0, 0, 1, 1, 2, 0, 1, 2, 2]
         })
         return data
     
@@ -195,7 +195,7 @@ preprocess:
         data = preprocessor.load_raw_data(str(data_path))
         
         assert data is not None
-        assert len(data) == 6
+        assert len(data) == 10
         assert 'target' in data.columns
     
     def test_handle_missing_values_clean(self, preprocessor, tmp_path):

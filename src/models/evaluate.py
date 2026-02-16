@@ -62,17 +62,37 @@ class ModelEvaluator:
         print(f"✓ Experiment: {experiment_name}")
     
     def load_model(self, model_path="models/model.pkl"):
-        """Load trained model"""
+        """
+        Load trained model from local path or MLflow URI
+
+        Args:
+            model_path: Path to model file or MLflow model URI
+        """
         print(f"\n{'='*50}")
         print("Loading Trained Model")
         print(f"{'='*50}\n")
         
-        self.model = joblib.load(model_path)
-        
-        print(f"✓ Model loaded: {model_path}")
+        if model_path.startswith("models:/") or model_path.startswith("runs:/"):
+            self.model = mlflow.sklearn.load_model(model_path)
+            print(f"✓ Model loaded from MLflow: {model_path}")
+        else:
+            self.model = joblib.load(model_path)
+            print(f"✓ Model loaded from local path: {model_path}")
+
         print(f"✓ Model type: {type(self.model).__name__}")
         
         return self.model
+
+    def set_model(self, model):
+        """
+        Set model directly
+
+        Args:
+            model: Pre-loaded model object
+        """
+        self.model = model
+        print(f"✓ Model set directly")
+        print(f"✓ Model type: {type(self.model).__name__}")
     
     def load_test_data(self, test_path="data/processed/test.csv"):
         """Load test data"""

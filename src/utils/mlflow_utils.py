@@ -373,27 +373,61 @@ class ModelRegistry:
         
         return self.client.get_model_version(model_name, version)
     
-    def load_production_model(self, model_name):
+    def load_model_by_stage(self, model_name, stage="Production"):
         """
-        Load production model
+        Load model by stage
         
         Args:
             model_name: Name of registered model
+            stage: Model stage (Staging, Production, etc.)
         
         Returns:
-            Production model
+            Loaded model
         """
-        model_uri = f"models:/{model_name}/Production"
-        
+        model_uri = f"models:/{model_name}/{stage}"
+
         try:
             model = mlflow.sklearn.load_model(model_uri)
-            print(f"\n✓ Loaded production model: {model_name}")
+            print(f"\n✓ Loaded model '{model_name}' from stage: {stage}")
             print(f"  • Model type: {type(model).__name__}")
             return model
         except Exception as e:
-            print(f"⚠ Error loading production model: {e}")
-            print(f"  • Make sure a model is in Production stage")
+            print(f"⚠ Error loading model from stage {stage}: {e}")
             return None
+
+    def load_model_by_version(self, model_name, version):
+        """
+        Load model by version
+
+        Args:
+            model_name: Name of registered model
+            version: Model version number
+
+        Returns:
+            Loaded model
+        """
+        model_uri = f"models:/{model_name}/{version}"
+        
+        try:
+            model = mlflow.sklearn.load_model(model_uri)
+            print(f"\n✓ Loaded model '{model_name}' version: {version}")
+            print(f"  • Model type: {type(model).__name__}")
+            return model
+        except Exception as e:
+            print(f"⚠ Error loading model version {version}: {e}")
+            return None
+
+    def load_production_model(self, model_name):
+        """
+        Load production model
+
+        Args:
+            model_name: Name of registered model
+
+        Returns:
+            Production model
+        """
+        return self.load_model_by_stage(model_name, "Production")
     
     def delete_model_version(self, model_name, version):
         """
