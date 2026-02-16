@@ -168,9 +168,12 @@ def preprocess_features(data: dict) -> np.ndarray:
     
     # Create engineered features (same as training)
     feature_ratio = features[0][0] / (features[0][1] + 1e-10)
+    feature_diff = features[0][0] - features[0][1]
     feature_sum = features[0][2] + features[0][3]
+    feature_product = features[0][2] * features[0][3]
+    feature_log_5 = np.log1p(max(0, features[0][4]))
     
-    # Combine all features
+    # Combine all features (must match training feature order)
     features_extended = np.array([[
         features[0][0],
         features[0][1],
@@ -178,7 +181,10 @@ def preprocess_features(data: dict) -> np.ndarray:
         features[0][3],
         features[0][4],
         feature_ratio,
-        feature_sum
+        feature_diff,
+        feature_sum,
+        feature_product,
+        feature_log_5
     ]])
     
     # Scale features if scaler available
@@ -271,7 +277,8 @@ async def predict(request: PredictionRequest):
         feature_importance = None
         if hasattr(model, 'feature_importances_'):
             feature_names = ['feature1', 'feature2', 'feature3', 'feature4', 
-                           'feature5', 'feature_ratio', 'feature_sum']
+                           'feature5', 'feature_ratio', 'feature_diff',
+                           'feature_sum', 'feature_product', 'feature_log_5']
             importance_dict = {
                 name: float(importance) 
                 for name, importance in zip(feature_names, model.feature_importances_)

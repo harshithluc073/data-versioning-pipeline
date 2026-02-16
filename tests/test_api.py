@@ -38,7 +38,10 @@ def setup_test_model(tmp_path_factory):
         'feature4': np.random.randn(30),
         'feature5': np.random.randn(30),
         'feature_ratio': np.random.randn(30),
+        'feature_diff': np.random.randn(30),
         'feature_sum': np.random.randn(30),
+        'feature_product': np.random.randn(30),
+        'feature_log_5': np.random.randn(30),
     })
     y_train = np.random.choice([0, 1, 2], 30)
     
@@ -169,7 +172,7 @@ class TestPredictEndpoint:
     def test_predict_with_nan(self, test_client):
         """Test prediction with NaN value returns 422"""
         invalid_request = {
-            "feature1": float('nan'),
+            "feature1": "NaN",
             "feature2": 3.5,
             "feature3": 1.4,
             "feature4": 0.2,

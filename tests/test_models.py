@@ -28,7 +28,10 @@ class TestModelTraining:
             'feature4': np.random.randn(50),
             'feature5': np.random.randn(50),
             'feature_ratio': np.random.randn(50),
+            'feature_diff': np.random.randn(50),
             'feature_sum': np.random.randn(50),
+            'feature_product': np.random.randn(50),
+            'feature_log_5': np.random.randn(50),
             'target': np.random.choice([0, 1, 2], 50)
         })
         
@@ -78,7 +81,7 @@ class TestModelTraining:
     def test_model_has_feature_importances(self, trained_model):
         """Test that model provides feature importances"""
         assert hasattr(trained_model, 'feature_importances_')
-        assert len(trained_model.feature_importances_) == 7  # 7 features
+        assert len(trained_model.feature_importances_) == 10  # 10 features
         assert all(imp >= 0 for imp in trained_model.feature_importances_)
         assert abs(sum(trained_model.feature_importances_) - 1.0) < 0.01
     
@@ -131,7 +134,10 @@ class TestModelEvaluation:
             'feature4': np.random.randn(20),
             'feature5': np.random.randn(20),
             'feature_ratio': np.random.randn(20),
+            'feature_diff': np.random.randn(20),
             'feature_sum': np.random.randn(20),
+            'feature_product': np.random.randn(20),
+            'feature_log_5': np.random.randn(20),
             'target': np.random.choice([0, 1, 2], 20)
         })
         
@@ -237,7 +243,10 @@ class TestPredictionPipeline:
             'feature4': np.random.randn(30),
             'feature5': np.random.randn(30),
             'feature_ratio': np.random.randn(30),
+            'feature_diff': np.random.randn(30),
             'feature_sum': np.random.randn(30),
+            'feature_product': np.random.randn(30),
+            'feature_log_5': np.random.randn(30),
         })
         y_train = np.random.choice([0, 1, 2], 30)
         

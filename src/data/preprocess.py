@@ -105,17 +105,25 @@ class DataPreprocessor:
         print("Feature Engineering")
         print(f"{'='*50}\n")
         
-        # Example: Create interaction features
-        # This is dataset-specific, adjust based on your data
+        # Interaction features and derived metrics
+        # Adjusted based on dataset characteristics
         
-        # For this sample dataset, we'll create a simple derived feature
         if 'feature1' in self.data.columns and 'feature2' in self.data.columns:
+            # Ratio and difference between feature1 and feature2
             self.data['feature_ratio'] = self.data['feature1'] / (self.data['feature2'] + 1e-10)
-            print("✓ Created feature: feature_ratio (feature1 / feature2)")
+            self.data['feature_diff'] = self.data['feature1'] - self.data['feature2']
+            print("✓ Created features: feature_ratio, feature_diff (from feature1, feature2)")
         
         if 'feature3' in self.data.columns and 'feature4' in self.data.columns:
+            # Sum and product of feature3 and feature4
             self.data['feature_sum'] = self.data['feature3'] + self.data['feature4']
-            print("✓ Created feature: feature_sum (feature3 + feature4)")
+            self.data['feature_product'] = self.data['feature3'] * self.data['feature4']
+            print("✓ Created features: feature_sum, feature_product (from feature3, feature4)")
+
+        if 'feature5' in self.data.columns:
+            # Log transformation of feature5
+            self.data['feature_log_5'] = np.log1p(self.data['feature5'].clip(lower=0))
+            print("✓ Created feature: feature_log_5 (log transformation)")
         
         print(f"\n✓ Total features: {self.data.shape[1]}")
         

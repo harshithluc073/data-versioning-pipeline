@@ -160,12 +160,12 @@ class TestDataPreprocessor:
     def sample_data(self):
         """Create sample dataset"""
         data = pd.DataFrame({
-            'feature1': [5.1, 4.9, 4.7, 6.2, 5.9, 6.1],
-            'feature2': [3.5, 3.0, 3.2, 2.9, 3.0, 2.8],
-            'feature3': [1.4, 1.4, 1.3, 4.3, 5.1, 5.6],
-            'feature4': [0.2, 0.2, 0.2, 1.3, 1.8, 1.4],
-            'feature5': [2.3, 2.1, 1.9, 3.7, 4.2, 4.5],
-            'target': [0, 0, 0, 1, 2, 2]
+            'feature1': [5.1, 4.9, 4.7, 6.2, 5.9, 6.1, 5.5, 6.5],
+            'feature2': [3.5, 3.0, 3.2, 2.9, 3.0, 2.8, 3.1, 3.2],
+            'feature3': [1.4, 1.4, 1.3, 4.3, 5.1, 5.6, 1.5, 4.5],
+            'feature4': [0.2, 0.2, 0.2, 1.3, 1.8, 1.4, 0.3, 1.5],
+            'feature5': [2.3, 2.1, 1.9, 3.7, 4.2, 4.5, 2.5, 3.8],
+            'target': [0, 0, 0, 1, 1, 2, 2, 0]
         })
         return data
     
@@ -195,7 +195,7 @@ preprocess:
         data = preprocessor.load_raw_data(str(data_path))
         
         assert data is not None
-        assert len(data) == 6
+        assert len(data) == 8
         assert 'target' in data.columns
     
     def test_handle_missing_values_clean(self, preprocessor, tmp_path):
@@ -230,9 +230,12 @@ preprocess:
         preprocessor.feature_engineering()
         final_columns = len(preprocessor.data.columns)
         
-        assert final_columns > initial_columns
+        assert final_columns == initial_columns + 5
         assert 'feature_ratio' in preprocessor.data.columns
+        assert 'feature_diff' in preprocessor.data.columns
         assert 'feature_sum' in preprocessor.data.columns
+        assert 'feature_product' in preprocessor.data.columns
+        assert 'feature_log_5' in preprocessor.data.columns
     
     def test_split_features_target(self, preprocessor, tmp_path):
         """Test splitting features and target"""
