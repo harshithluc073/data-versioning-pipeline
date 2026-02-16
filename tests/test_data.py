@@ -160,12 +160,12 @@ class TestDataPreprocessor:
     def sample_data(self):
         """Create sample dataset"""
         data = pd.DataFrame({
-            'feature1': [5.1, 4.9, 4.7, 6.2, 5.9, 6.1],
-            'feature2': [3.5, 3.0, 3.2, 2.9, 3.0, 2.8],
-            'feature3': [1.4, 1.4, 1.3, 4.3, 5.1, 5.6],
-            'feature4': [0.2, 0.2, 0.2, 1.3, 1.8, 1.4],
-            'feature5': [2.3, 2.1, 1.9, 3.7, 4.2, 4.5],
-            'target': [0, 0, 0, 1, 2, 2]
+            'feature1': [5.1, 4.9, 4.7, 6.2, 5.9, 6.1, 6.3, 6.4, 6.5, 6.6],
+            'feature2': [3.5, 3.0, 3.2, 2.9, 3.0, 2.8, 2.7, 2.6, 2.5, 2.4],
+            'feature3': [1.4, 1.4, 1.3, 4.3, 5.1, 5.6, 5.8, 5.9, 6.0, 6.1],
+            'feature4': [0.2, 0.2, 0.2, 1.3, 1.8, 1.4, 1.5, 1.6, 1.7, 1.8],
+            'feature5': [2.3, 2.1, 1.9, 3.7, 4.2, 4.5, 4.6, 4.7, 4.8, 4.9],
+            'target': [0, 0, 0, 0, 1, 1, 1, 2, 2, 2]
         })
         return data
     
@@ -195,7 +195,7 @@ preprocess:
         data = preprocessor.load_raw_data(str(data_path))
         
         assert data is not None
-        assert len(data) == 6
+        assert len(data) == 10
         assert 'target' in data.columns
     
     def test_handle_missing_values_clean(self, preprocessor, tmp_path):
