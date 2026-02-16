@@ -14,6 +14,7 @@ from datetime import datetime
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from src.utils.mlflow_utils import MLflowManager, ModelRegistry
+from src.models.evaluate import ModelEvaluator
 
 
 class ModelRegistryWorkflow:
@@ -226,6 +227,75 @@ class ModelRegistryWorkflow:
         
         return updated_version
     
+    def validate_model(self, model_name, version=None, stage=None, metric="test_accuracy", threshold=0.8):
+        """
+        Validate model performance
+
+        Args:
+            model_name: Name of registered model
+            version: Version to validate (if stage is None)
+            stage: Stage to validate (if version is None)
+            metric: Metric to check
+            threshold: Minimum acceptable value
+
+        Returns:
+            Boolean indicating success
+        """
+        print(f"\n{'='*60}")
+        print("Validating Model")
+        print(f"{'='*60}\n")
+
+        # Determine model URI
+        if stage:
+            model_uri = f"models:/{model_name}/{stage}"
+            print(f"Validating {model_name} in stage: {stage}")
+        elif version:
+            model_uri = f"models:/{model_name}/{version}"
+            print(f"Validating {model_name} version: {version}")
+        else:
+            print("⚠ Must specify either version or stage for validation")
+            return False
+
+        # Initialize evaluator
+        evaluator = ModelEvaluator()
+
+        # Load model and test data
+        try:
+            evaluator.load_model(model_uri)
+            evaluator.load_test_data()
+            evaluator.make_predictions()
+            metrics = evaluator.calculate_metrics()
+
+            # Map metric names if necessary
+            eval_metric = metric
+            if metric == "test_accuracy": eval_metric = "accuracy"
+            elif metric == "test_precision": eval_metric = "precision"
+            elif metric == "test_recall": eval_metric = "recall"
+            elif metric == "test_f1_score": eval_metric = "f1_score"
+
+            if eval_metric not in metrics:
+                print(f"⚠ Metric '{eval_metric}' not found in calculated metrics")
+                print(f"  Available metrics: {list(metrics.keys())}")
+                return False
+
+            actual_value = metrics[eval_metric]
+
+            print(f"\nValidation Result:")
+            print(f"  • Metric: {metric}")
+            print(f"  • Threshold: {threshold}")
+            print(f"  • Actual: {actual_value:.4f}")
+
+            if actual_value >= threshold:
+                print(f"\n✅ Validation PASSED")
+                return True
+            else:
+                print(f"\n❌ Validation FAILED")
+                return False
+
+        except Exception as e:
+            print(f"⚠ Error during validation: {e}")
+            return False
+
     def full_deployment_workflow(self, model_name=None, metric="test_accuracy", 
                                  min_threshold=0.8, skip_staging=False):
         """
@@ -260,9 +330,20 @@ class ModelRegistryWorkflow:
         if not skip_staging:
             self.promote_to_staging(final_model_name, final_version)
             
-            # Optional: Add validation step here
-            print(f"\n⚠ Manual validation recommended before production")
-            print(f"  • Test model in staging environment")
+            # Validation step
+            is_valid = self.validate_model(
+                model_name=final_model_name,
+                version=final_version,
+                metric=metric,
+                threshold=min_threshold
+            )
+
+            if not is_valid:
+                print(f"\n⚠ Workflow stopped: Model validation failed in staging")
+                return None
+
+            print(f"\n✓ Automated validation passed!")
+            print(f"  • Model verified in staging environment")
             print(f"  • Run: python -c \"from src.models.registry import *; workflow = ModelRegistryWorkflow(); workflow.promote_to_production('{final_model_name}')\"")
             
             return model_version
