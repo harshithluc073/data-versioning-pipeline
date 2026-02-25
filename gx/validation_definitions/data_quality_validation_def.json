@@ -1,0 +1,22 @@
+{
+  "data": {
+    "asset": {
+      "id": "21b169c1-5274-4eba-ad55-11dae284d2ca",
+      "name": "raw_dataset"
+    },
+    "batch_definition": {
+      "id": "81af5123-5320-4f9a-a53f-08c2529076f2",
+      "name": "whole_dataframe"
+    },
+    "datasource": {
+      "id": "f5f89dfd-70b7-4ebb-aafe-ca610381cbe4",
+      "name": "my_pandas_datasource"
+    }
+  },
+  "id": "81ded672-fa5b-4e69-8952-a436266161e8",
+  "name": "data_quality_validation_def",
+  "suite": {
+    "id": "571e86e8-df09-4baa-8661-6c02f4b0902d",
+    "name": "data_suite"
+  }
+}

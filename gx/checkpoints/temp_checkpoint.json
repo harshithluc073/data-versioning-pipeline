@@ -1,0 +1,12 @@
+{
+  "actions": [],
+  "id": "cf5398cb-9690-4d9e-9567-9c3c9b9bc609",
+  "name": "temp_checkpoint",
+  "result_format": "COMPLETE",
+  "validation_definitions": [
+    {
+      "id": "de7a048d-424d-4e75-bcd3-b4e7b79ecbb5",
+      "name": "dynamic_validation_def"
+    }
+  ]
+}

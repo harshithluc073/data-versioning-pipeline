@@ -1,0 +1,12 @@
+{
+  "actions": [],
+  "id": "7b6caf16-6577-4c8c-a190-9b8ed700e500",
+  "name": "data_quality_checkpoint",
+  "result_format": "COMPLETE",
+  "validation_definitions": [
+    {
+      "id": "81ded672-fa5b-4e69-8952-a436266161e8",
+      "name": "data_quality_validation_def"
+    }
+  ]
+}

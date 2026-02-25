@@ -1,0 +1,80 @@
+name: Data Quality Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  validate-and-train:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install great_expectations pandas scikit-learn numpy
+
+    - name: Generate Dummy Data
+      run: |
+        # Generate the standard dataset
+        python src/data/create_dummy_data.py
+
+    - name: Initialize Expectation Suite
+      run: |
+        # Initialize GX and create suite
+        python src/data/create_expectation_suite.py
+
+    - name: Validate Data
+      id: validation
+      run: |
+        # Run validation on the generated data
+        python src/data/validate_gx.py data/raw/dataset.csv
+
+    - name: Run Bad Data Simulator (Demo)
+      # This step shows how the pipeline handles bad data.
+      # We allow it to fail or just run it to generate reports.
+      # For demo purposes, we run it but don't fail the build immediately,
+      # or we expect it to fail.
+      continue-on-error: true
+      run: |
+        python src/data/simulate_bad_data.py
+        echo "Running validation on bad data (Expected Failure)..."
+        if ! python src/data/validate_gx.py data/raw/dataset_bad.csv; then
+          echo "Caught expected validation failure for bad data."
+        else
+          echo "Unexpected pass for bad data!"
+          exit 1
+        fi
+
+    - name: Preprocess Data
+      if: success()
+      run: |
+        python src/data/preprocess.py
+
+    - name: Train Model
+      if: success()
+      run: |
+        python src/models/train.py
+
+    - name: Evaluate Model
+      if: success()
+      run: |
+        python src/models/evaluate.py
+
+    - name: Upload Data Docs
+      uses: actions/upload-artifact@v3
+      with:
+        name: data-docs
+        path: gx/uncommitted/data_docs/local_site/
