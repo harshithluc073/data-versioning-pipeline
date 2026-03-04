@@ -6,6 +6,7 @@ Serves ML model predictions via REST API
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, validator
 import joblib
+import asyncio
 import numpy as np
 import pandas as pd
 from typing import List, Optional
@@ -196,7 +197,8 @@ async def startup_event():
     print("\n" + "="*50)
     print("Starting ML Prediction API")
     print("="*50 + "\n")
-    load_model()
+    # Load model in a separate thread to avoid blocking the event loop
+    await asyncio.to_thread(load_model)
     print("\n" + "="*50)
     print("API Ready!")
     print("="*50 + "\n")
